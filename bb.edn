@@ -1,0 +1,2 @@
+{:deps {io.github.athos/envman {:local/root "."}}
+ :bbin/bin {envman {:main-opts ["-m" "envman.main"]}}}
