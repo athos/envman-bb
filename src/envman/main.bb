@@ -11,7 +11,7 @@
 
 (def table
   [{:cmds ["create"] :fn create/create}
-   {:cmds ["run"] :fn run/run}
+   {:cmds ["run"] :fn run/run :spec run/opts-spec}
    {:cmds ["ls"] :fn list/list}
    {:cmds ["cat"] :fn cat/cat}
    {:cmds ["edit"] :fn edit/edit}
