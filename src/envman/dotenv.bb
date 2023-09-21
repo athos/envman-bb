@@ -41,7 +41,7 @@
                  (conj ret (expand-var-if-necessary line opts) \newline))))
       (throw (ex-info "unexpected end of string" {})))))
 
-(defn- parse-lines [lines {:keys [allow-export?] :as opts}]
+(defn- parse-lines [lines {:keys [allow-export?] :or {allow-export? true} :as opts}]
   (let [[line & lines] lines
         [_ var val] (re-matches (if allow-export?
                                   #"(?:\s*export\s)?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*)"
