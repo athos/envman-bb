@@ -2,7 +2,9 @@
   (:require [babashka.process :as proc]
             [clojure.string :as str]
             [envman.dotenv :as dotenv]
-            [envman.files :as files]))
+            [envman.edit :as edit]
+            [envman.files :as files]
+            [babashka.fs :as fs]))
 
 (def opts-spec
   [[:env {:desc "Set variable <name> to <value>"
@@ -10,7 +12,10 @@
           :alias :e}]
    [:isolated {:desc "Execute the command with only the specified environment variables"
                :coerce :boolean
-               :alias :i}]])
+               :alias :i}]
+   [:edit {:desc "Launch an editor to edit variables on the fly before executing the command"
+           :coerce :boolean
+           :alias :E}]])
 
 (defn- run-with-shell [env cmd]
   (apply proc/shell {:out *out* :err *err* :env env :continue true} cmd))
@@ -35,12 +40,37 @@
             acc
             vars)))
 
+(defn- quote-content [s]
+  (str \"
+       (str/replace s #"(?<!\\)[\\\"]" (fn [c] (str \\ c)))
+       \"))
+
+(defn- print-env [vars env]
+  (doseq [k vars
+          :let [v (or (get env k) "")
+                v' (cond-> v
+                     (not (re-matches #"[a-zA-Z0-9_]*" v))
+                     quote-content)]]
+    (printf "%s=%s\n" k v'))
+  (flush))
+
+(defn- edit-and-load [edit-vars env]
+  (let [content (with-out-str
+                  (print-env edit-vars env))
+        tmp (edit/edit :init-content content)
+        env' (into {} (load-dotenv env tmp))]
+    (fs/delete tmp)
+    env'))
+
 (defn run [{:keys [opts args]}]
   (let [names (str/split (first args) #",")
         paths (map files/envman-path names)
         init-env (into {} (System/getenv))
         {:keys [env updated]} (update-env init-env paths (:env opts))
         env (cond->> (select-keys env updated)
+              (:edit opts)
+              (edit-and-load updated)
+
               (not (:isolated opts))
               (merge init-env))
         {:keys [exit]} @(run-with-shell env (rest args))]
