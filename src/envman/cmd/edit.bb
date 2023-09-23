@@ -1,9 +1,8 @@
 (ns envman.cmd.edit
-  (:require [babashka.process :as proc]
+  (:require [envman.edit :as edit]
             [envman.files :as files]))
 
 (defn edit [{:keys [args]}]
   (files/ensure-envman-dirs)
-  (let [fpath (files/envman-path (first args))
-        editor (System/getenv "EDITOR")]
-    @(proc/process {:in :inherit :out :inherit :err :inherit} editor fpath)))
+  (let [fpath (files/envman-path (first args))]
+    (edit/edit :init-content (slurp fpath) :to fpath)))
