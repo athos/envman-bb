@@ -4,7 +4,6 @@
             [envman.cmd.edit :as edit]
             [envman.cmd.export :as export]
             [envman.cmd.import :as import]
-            [envman.cmd.list :as list]
             [envman.cmd.misc :as misc]
             [envman.cmd.run :as run]))
 
@@ -39,7 +38,7 @@
       {:cmds ["run"] :fn run/run :spec run/opts-spec
        :usage "run NAME[,NAME...] [OPTION...] -- COMMAND [ARG...]"
        :desc "Run command with specified sets of environment variables"}
-      {:cmds ["ls"] :fn list/list
+      {:cmds ["ls"] :fn misc/list
        :usage "ls"
        :desc "List environment variable sets"}
       {:cmds ["cat"] :fn misc/cat
