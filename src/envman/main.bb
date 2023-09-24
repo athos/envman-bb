@@ -1,6 +1,5 @@
 (ns envman.main
   (:require [babashka.cli :as cli]
-            [envman.cmd.cat :as cat]
             [envman.cmd.create :as create]
             [envman.cmd.edit :as edit]
             [envman.cmd.export :as export]
@@ -43,7 +42,7 @@
       {:cmds ["ls"] :fn list/list
        :usage "ls"
        :desc "List environment variable sets"}
-      {:cmds ["cat"] :fn cat/cat
+      {:cmds ["cat"] :fn misc/cat
        :usage "cat NAME[,NAME...]"
        :desc "Show environment variable sets"}
       {:cmds ["edit"] :fn edit/edit

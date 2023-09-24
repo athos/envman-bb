@@ -1,8 +1,13 @@
 (ns envman.cmd.misc
-  (:refer-clojure :exclude [remove])
+  (:refer-clojure :exclude [cat remove])
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
             [envman.files :as files]))
+
+(defn cat [{:keys [args]}]
+  (doseq [name (str/split (first args) #",")]
+    (print (slurp (files/envman-path name)))
+    (flush)))
 
 (defn copy [{[src dst] :args}]
   (let [names (str/split src #",")
