@@ -23,24 +23,34 @@
 (def table
   (delay
     [{:cmds ["create"] :fn create/create
+      :usage "create NAME"
       :desc "Create new environment variable set"}
      {:cmds ["run"] :fn run/run :spec run/opts-spec
+      :usage "run NAME[,NAME...] [OPTION...] -- COMMAND [ARG...]"
       :desc "Run command with specified sets of environment variables"}
      {:cmds ["ls"] :fn list/list
+      :usage "ls"
       :desc "List environment variable sets"}
      {:cmds ["cat"] :fn cat/cat
+      :usage "cat NAME[,NAME...]"
       :desc "Show environment variable sets"}
      {:cmds ["edit"] :fn edit/edit
+      :usage "edit NAME"
       :desc "Edit environment variable set"}
      {:cmds ["cp"] :fn misc/copy
+      :usage "cp NAME1[,NAME...] NAME2"
       :desc "Copy environment variable set"}
      {:cmds ["mv"] :fn misc/move
+      :usage "mv NAME1 NAME2"
       :desc "Rename environment variable set"}
      {:cmds ["rm"] :fn misc/remove
+      :usage "rm NAME[,NAME...]"
       :desc "Remove environment variable sets"}
      {:cmds ["import"] :fn import/import
+      :usage "import NAME"
       :desc "Import .env file as environment variable set"}
      {:cmds ["export"] :fn export/export
+      :usage "export NAME[,NAME...]"
       :desc "Export environment variable sets as .env file"}
      {:cmds ["help"] :fn usage
       :desc "Print this message"}
@@ -52,18 +62,24 @@
       (apply str s (repeat (- n len) \space))
       s)))
 
-(defn- usage [_]
-  (println
-   "Usage:  envman COMMAND
+(defn- usage [{:keys [args]}]
+  (if (seq args)
+    (let [cmd (first (filter #(= (:cmds %) args) @table))]
+      (printf "Usage: envman %s\n\n" (:usage cmd))
+      (println (:desc cmd))
+      (when-let [spec (:spec cmd)]
+        (println "\nOptions:")
+        (println (cli/format-opts {:spec spec}))))
+    (let [max-len (apply max (map (comp count first :cmds) @table))]
+      (println "Usage:  envman COMMAND
 
 Commands:")
-  (let [max-len (apply max (map (comp count first :cmds) @table))]
-    (doseq [cmd @table
-            :when (seq (:cmds cmd))]
-      (printf "  %s   %s\n"
-              (pad-right max-len (first (:cmds cmd)))
-              (or (:desc cmd) "")))
-    (flush)))
+      (doseq [cmd @table
+              :when (seq (:cmds cmd))]
+        (printf "  %s   %s\n"
+                (pad-right max-len (first (:cmds cmd)))
+                (or (:desc cmd) "")))
+      (flush))))
 
 (defn -main [& args]
   (letfn [(error-fn [{:keys [type msg] :as data}]
