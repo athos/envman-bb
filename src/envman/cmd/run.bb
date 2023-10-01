@@ -1,10 +1,10 @@
 (ns envman.cmd.run
-  (:require [babashka.process :as proc]
+  (:require [babashka.fs :as fs]
+            [babashka.process :as proc]
             [clojure.string :as str]
             [envman.dotenv :as dotenv]
             [envman.edit :as edit]
-            [envman.files :as files]
-            [babashka.fs :as fs]))
+            [envman.files :as files]))
 
 (def opts-spec
   [[:env {:desc "Set variable <name> to <value>"

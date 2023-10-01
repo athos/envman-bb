@@ -9,6 +9,17 @@
 
 (declare usage)
 
+(defn- trap-error [f]
+  (fn [{:keys [opts] :as m}]
+    (try
+      (f m)
+      (catch Throwable t
+        (if (:debug opts)
+          (throw t)
+          (binding [*out* *err*]
+            (println "error:" (ex-message t))
+            (System/exit 1)))))))
+
 (defn error-fn-for [cmd]
   (fn [{:keys [type cause msg option] :as data}]
     (if (= :org.babashka/cli type)
@@ -66,7 +77,13 @@
       {:cmds ["help"] :fn usage
        :desc "Print this message"}
       {:cmds [] :fn fallback}]
-     (mapv #(assoc % :error-fn (error-fn-for %))))))
+     (mapv #(-> %
+                (update :fn trap-error)
+                (assoc :error-fn (error-fn-for %)))))))
+
+(def ^:private common-opts-spec
+  [[:debug {:desc "Print internal stacktrace in case of exception"
+            :coerce :boolean}]])
 
 (defn- pad-right [n s]
   (let [len (count s)]
@@ -78,7 +95,7 @@
   (if  (or (and (= dispatch ["help"]) (empty? args))
            (and (empty? cmds) (empty? dispatch)))
     (let [max-len (apply max (map (comp count first :cmds) @table))]
-      (println "Usage:  envman COMMAND
+      (println "Usage:  envman COMMAND [OPTION...]
 
 Commands:")
       (doseq [cmd @table
@@ -86,7 +103,9 @@ Commands:")
         (printf "  %s   %s\n"
                 (pad-right max-len (first (:cmds cmd)))
                 (or (:desc cmd) "")))
-      (flush))
+      (flush)
+      (println "\nCommon options:")
+      (println (cli/format-opts {:spec common-opts-spec})))
     (let [target (if (= dispatch ["help"]) (take 1 args) cmds)
           cmd (first (filter #(= (:cmds %) target) @table))
           hidden-opts (set (:args->opts cmd))
@@ -98,4 +117,4 @@ Commands:")
         (println (cli/format-opts {:spec spec}))))))
 
 (defn -main [& args]
-  (cli/dispatch @table args {:restrict true}))
+  (cli/dispatch @table args {:restrict true :spec common-opts-spec}))
