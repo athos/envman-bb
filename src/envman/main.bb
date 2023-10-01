@@ -12,10 +12,11 @@
 (defn error-fn-for [cmd]
   (fn [{:keys [type cause msg option] :as data}]
     (if (= :org.babashka/cli type)
-      (case cause
-        :restrict
+      (let [errmsg (case cause
+                     :restrict (str "error: unknown option " option)
+                     (str "error: " msg))]
         (binding [*out* *err*]
-          (println "error: unknown option" option)
+          (println errmsg)
           (usage (assoc data :cmds (:cmds cmd)))))
       (throw (ex-info msg data)))
     (System/exit 1)))
