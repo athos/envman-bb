@@ -1,8 +1,12 @@
 (ns envman.cmd.edit
   (:require [envman.edit :as edit]
-            [envman.files :as files]))
+            [envman.files :as files]
+            [envman.util :as util]))
 
-(defn edit [{:keys [args]}]
+(def opts-spec
+  [[:name {:coerce util/check-name}]])
+
+(defn edit [{:keys [opts]}]
   (files/ensure-envman-dirs)
-  (let [fpath (files/envman-path (first args))]
+  (let [fpath (files/envman-path (:name opts))]
     (edit/edit :init-content (slurp fpath) :to fpath)))

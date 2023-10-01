@@ -32,7 +32,7 @@
 (def table
   (delay
     (->>
-     [{:cmds ["create"] :fn create/create
+     [{:cmds ["create"] :fn create/create :spec create/opts-spec :args->opts [:name]
        :usage "create NAME"
        :desc "Create new environment variable set"}
       {:cmds ["run"] :fn run/run :spec run/opts-spec
@@ -41,25 +41,25 @@
       {:cmds ["ls"] :fn misc/list
        :usage "ls"
        :desc "List environment variable sets"}
-      {:cmds ["cat"] :fn misc/cat
+      {:cmds ["cat"] :fn misc/cat :spec misc/cat-opts-spec :args->opts [:name]
        :usage "cat NAME[,NAME...]"
        :desc "Show environment variable sets"}
-      {:cmds ["edit"] :fn edit/edit
+      {:cmds ["edit"] :fn edit/edit :spec edit/opts-spec :args->opts [:name]
        :usage "edit NAME"
        :desc "Edit environment variable set"}
-      {:cmds ["cp"] :fn misc/copy
+      {:cmds ["cp"] :fn misc/copy :spec misc/copy-opts-spec :args->opts [:src :dst]
        :usage "cp NAME1[,NAME...] NAME2"
        :desc "Copy environment variable set"}
-      {:cmds ["mv"] :fn misc/move
+      {:cmds ["mv"] :fn misc/move :spec misc/move-opts-spec :args->opts [:src :dst]
        :usage "mv NAME1 NAME2"
        :desc "Rename environment variable set"}
-      {:cmds ["rm"] :fn misc/remove
+      {:cmds ["rm"] :fn misc/remove :spec misc/remove-opts-spec :args->opts [:name]
        :usage "rm NAME[,NAME...]"
        :desc "Remove environment variable sets"}
-      {:cmds ["import"] :fn import/import
+      {:cmds ["import"] :fn import/import :spec import/opts-spec :args->opts [:name]
        :usage "import NAME"
        :desc "Import .env file as environment variable set"}
-      {:cmds ["export"] :fn export/export
+      {:cmds ["export"] :fn export/export :spec export/opts-spec :args->opts [:name]
        :usage "export NAME[,NAME...]"
        :desc "Export environment variable sets as .env file"}
       {:cmds ["help"] :fn usage
@@ -87,10 +87,12 @@ Commands:")
                 (or (:desc cmd) "")))
       (flush))
     (let [target (if (= dispatch ["help"]) (take 1 args) cmds)
-          cmd (first (filter #(= (:cmds %) target) @table))]
+          cmd (first (filter #(= (:cmds %) target) @table))
+          hidden-opts (set (:args->opts cmd))
+          spec (remove #(hidden-opts (first %)) (:spec cmd))]
       (printf "Usage: envman %s\n\n" (:usage cmd))
       (println (:desc cmd))
-      (when-let [spec (:spec cmd)]
+      (when (seq spec)
         (println "\nOptions:")
         (println (cli/format-opts {:spec spec}))))))
 

@@ -1,11 +1,14 @@
 (ns envman.cmd.export
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
-            [envman.files :as files]))
+            [envman.files :as files]
+            [envman.util :as util]))
 
-(defn export [{:keys [args]}]
-  (let [names (str/split (first args) #",")
-        tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
+(def opts-spec
+  [[:name {:coerce util/parse-names}]])
+
+(defn export [{{names :name} :opts}]
+  (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
     (doseq [name names
             :let [path (files/envman-path name)
                   content (str/split-lines (slurp path))]]
