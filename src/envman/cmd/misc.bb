@@ -39,8 +39,12 @@
            (files/envman-path dst)))
 
 (def remove-opts-spec
-  [[:name {:coerce util/parse-names}]])
+  [[:name {:coerce util/parse-names}]
+   [:force {:desc "Do not report an error even if the specified name does not exist"
+            :coerce :boolean
+            :alias :f}]])
 
-(defn remove [{{names :name} :opts}]
-  (doseq [name names]
-    (fs/delete (files/envman-path name))))
+(defn remove [{:keys [opts]}]
+  (let [delete-fn (if (:force opts) fs/delete-if-exists fs/delete)]
+    (doseq [name (:name opts)]
+      (delete-fn (files/envman-path name)))))
