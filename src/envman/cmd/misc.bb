@@ -3,7 +3,8 @@
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
             [envman.files :as files]
-            [envman.util :as util]))
+            [envman.util :as util])
+  (:import [java.nio.file FileAlreadyExistsException]))
 
 (defn list [_]
   (doseq [file (fs/list-dir (files/envman-path))
@@ -15,7 +16,7 @@
 
 (defn cat [{{names :name} :opts}]
   (doseq [name names]
-    (print (slurp (files/envman-path name)))
+    (print (slurp (files/existing-envman-path name)))
     (flush)))
 
 (def copy-opts-spec
@@ -28,11 +29,14 @@
 (defn copy [{:keys [opts]}]
   (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
     (doseq [name (:src opts)
-            :let [path (files/envman-path name)
+            :let [path (files/existing-envman-path name)
                   content (str/split-lines (slurp path))]]
       (fs/write-lines tmp content {:append true}))
-    (fs/move tmp (files/envman-path (:dst opts))
-             {:replace-existing (:force opts)})))
+    (try
+      (fs/move tmp (files/envman-path (:dst opts))
+               {:replace-existing (:force opts)})
+      (catch FileAlreadyExistsException e
+        (throw (ex-info (str "name \"" (:dst opts) "\" already exists") {} e))))))
 
 (def move-opts-spec
   [[:src {:coerce util/check-name}]
@@ -42,9 +46,12 @@
             :alias :f}]])
 
 (defn move [{:keys [opts]}]
-  (fs/move (files/envman-path (:src opts))
-           (files/envman-path (:dst opts))
-           {:replace-existing (:force opts)}))
+  (let [{:keys [src dst]} opts]
+    (try
+      (fs/move (files/existing-envman-path src) (files/envman-path dst)
+               {:replace-existing (:force opts)})
+      (catch FileAlreadyExistsException e
+        (throw (ex-info (str "name \"" dst "\" already exists") {} e))))))
 
 (def remove-opts-spec
   [[:name {:coerce util/parse-names}]
@@ -53,6 +60,6 @@
             :alias :f}]])
 
 (defn remove [{:keys [opts]}]
-  (let [delete-fn (if (:force opts) fs/delete-if-exists fs/delete)]
+  (let [path-fn (if (:force opts) files/envman-path files/existing-envman-path)]
     (doseq [name (:name opts)]
-      (delete-fn (files/envman-path name)))))
+      (fs/delete-if-exists (path-fn name)))))

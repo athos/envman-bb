@@ -14,7 +14,7 @@
 (defn export [{{names :name :keys [file]} :opts}]
   (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
     (doseq [name names
-            :let [path (files/envman-path name)
+            :let [path (files/existing-envman-path name)
                   content (str/split-lines (slurp path))]]
       (fs/write-lines tmp content {:append true}))
     (fs/move tmp (or file ".env"))))
