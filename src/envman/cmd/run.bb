@@ -8,6 +8,7 @@
 
 (def opts-spec
   [[:env {:desc "Set variable <name> to <value>"
+          :default-desc "<name>=<value>"
           :coerce [:string]
           :alias :e}]
    [:isolated {:desc "Execute the command with only the specified environment variables"
