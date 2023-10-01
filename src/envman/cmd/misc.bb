@@ -20,23 +20,31 @@
 
 (def copy-opts-spec
   [[:src {:coerce util/parse-names}]
-   [:dst {:coerce util/check-name}]])
+   [:dst {:coerce util/check-name}]
+   [:force {:desc "Overwrite the existing name without error if it exists"
+            :coerce :boolean
+            :alias :f}]])
 
-(defn copy [{{names :name :keys [dst]} :opts}]
+(defn copy [{:keys [opts]}]
   (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
-    (doseq [name names
+    (doseq [name (:src opts)
             :let [path (files/envman-path name)
                   content (str/split-lines (slurp path))]]
       (fs/write-lines tmp content {:append true}))
-    (fs/move tmp (files/envman-path dst))))
+    (fs/move tmp (files/envman-path (:dst opts))
+             {:replace-existing (:force opts)})))
 
 (def move-opts-spec
   [[:src {:coerce util/check-name}]
-   [:dsc {:coerce util/check-name}]])
+   [:dst {:coerce util/check-name}]
+   [:force {:desc "Overwrite the existing name without error if it exists"
+            :coerce :boolean
+            :alias :f}]])
 
-(defn move [{{:keys [src dst]} :opts}]
-  (fs/move (files/envman-path src)
-           (files/envman-path dst)))
+(defn move [{:keys [opts]}]
+  (fs/move (files/envman-path (:src opts))
+           (files/envman-path (:dst opts))
+           {:replace-existing (:force opts)}))
 
 (def remove-opts-spec
   [[:name {:coerce util/parse-names}]
