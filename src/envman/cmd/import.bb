@@ -6,11 +6,15 @@
             [envman.util :as util]))
 
 (def opts-spec
-  [[:name {:coerce util/check-name}]])
+  [[:name {:coerce util/check-name}]
+   [:file {:desc "Specify the input file name. Defaults to `.env`."
+           :coerce :string
+           :default-desc "<file>"
+           :alias :f}]])
 
 (defn import [{:keys [opts]}]
   (files/ensure-envman-dirs)
   (let [fpath (files/envman-path (:name opts))
         editor (System/getenv "EDITOR")]
-    (fs/copy ".env" fpath)
+    (fs/copy (or (:file opts) ".env") fpath)
     @(proc/process {:in :inherit :out :inherit :err :inherit} editor fpath)))
