@@ -6,10 +6,10 @@
   (fs/path (fs/home) ".envman-bb"))
 
 (defn envman-files-dir [& paths]
-  (apply fs/path (envman-home) "envs" paths))
+  (apply fs/path (envman-home) "files" paths))
 
 (defn name-path [name]
-  (apply fs/path (envman-home) "envs" (str/split name #"/")))
+  (apply envman-files-dir (str/split name #"/")))
 
 (defn existing-name-path [name]
   (let [fpath (name-path name)]
