@@ -28,6 +28,7 @@
     (if (and (not (:force opts)) (fs/exists? fpath))
       (throw (util/name-existing-error name))
       (try
+        (files/ensure-parent-dirs fpath)
         (if (:edit opts)
           (edit/edit {:init-content (slurp file) :to fpath :force (:force opts)})
           (fs/copy file fpath {:replace-existing (:force opts)}))

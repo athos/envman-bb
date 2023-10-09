@@ -7,9 +7,11 @@
   (:import [java.nio.file FileAlreadyExistsException]))
 
 (defn list [_]
-  (doseq [file (fs/list-dir (files/envman-files-dir))
-          :when (not (fs/directory? file))]
-    (println (fs/file-name file))))
+  (let [root (files/envman-files-dir)]
+    (doseq [file (sort (fs/glob root "**"))
+            :when (not (fs/directory? file))
+            :let [rel-path (str (fs/relativize root file))]]
+      (println (str/replace rel-path fs/file-separator "/")))))
 
 (def cat-opts-spec
   [[:name {:coerce util/parse-names}]])
@@ -27,16 +29,18 @@
             :alias :f}]])
 
 (defn copy [{:keys [opts]}]
-  (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
+  (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})
+        dst (:dst opts)
+        dst-path (files/name-path dst)]
     (doseq [name (:src opts)
             :let [path (files/existing-name-path name)
                   content (str/split-lines (slurp (fs/file path)))]]
       (fs/write-lines tmp content {:append true}))
     (try
-      (fs/move tmp (files/name-path (:dst opts))
-               {:replace-existing (:force opts)})
+      (files/ensure-parent-dirs dst-path)
+      (fs/move tmp dst-path {:replace-existing (:force opts)})
       (catch FileAlreadyExistsException e
-        (throw (util/name-existing-error (:dst opts) e))))))
+        (throw (util/name-existing-error dst e))))))
 
 (def move-opts-spec
   [[:src {:coerce util/check-name}]
@@ -46,9 +50,11 @@
             :alias :f}]])
 
 (defn move [{:keys [opts]}]
-  (let [{:keys [src dst]} opts]
+  (let [{:keys [src dst]} opts
+        dst-path (files/name-path dst)]
     (try
-      (fs/move (files/existing-name-path src) (files/name-path dst)
+      (files/ensure-parent-dirs dst-path)
+      (fs/move (files/existing-name-path src) dst-path
                {:replace-existing (:force opts)})
       (catch FileAlreadyExistsException e
         (throw (util/name-existing-error dst e))))))

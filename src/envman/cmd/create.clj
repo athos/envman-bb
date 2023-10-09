@@ -9,4 +9,5 @@
 (defn create [{:keys [opts]}]
   (files/ensure-files-dir)
   (let [fpath (files/name-path (:name opts))]
+    (files/ensure-parent-dirs fpath)
     (edit/edit :to fpath)))
