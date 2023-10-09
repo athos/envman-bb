@@ -14,3 +14,12 @@
     (when (empty? names)
       (throw (ex-info "names must be one or more comma-separated names" {})))
     (mapv check-name names)))
+
+(defn name-existing-error
+  ([name]
+   (name-existing-error name nil))
+  ([name e]
+   (let [msg (str "name \"" name "\" already exists")]
+     (if e
+       (ex-info msg {} e)
+       (ex-info msg {})))))

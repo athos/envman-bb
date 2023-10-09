@@ -36,7 +36,7 @@
       (fs/move tmp (files/envman-path (:dst opts))
                {:replace-existing (:force opts)})
       (catch FileAlreadyExistsException e
-        (throw (ex-info (str "name \"" (:dst opts) "\" already exists") {} e))))))
+        (throw (util/name-existing-error (:dst opts) e))))))
 
 (def move-opts-spec
   [[:src {:coerce util/check-name}]
@@ -51,7 +51,7 @@
       (fs/move (files/existing-envman-path src) (files/envman-path dst)
                {:replace-existing (:force opts)})
       (catch FileAlreadyExistsException e
-        (throw (ex-info (str "name \"" dst "\" already exists") {} e))))))
+        (throw (util/name-existing-error dst e))))))
 
 (def remove-opts-spec
   [[:name {:coerce util/parse-names}]

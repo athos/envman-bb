@@ -28,4 +28,4 @@
       (when (:edit opts)
         (edit/edit {:to fpath}))
       (catch FileAlreadyExistsException e
-        (throw (ex-info (str "name \"" name "\" already exists") {} e))))))
+        (throw (util/name-existing-error name e))))))
