@@ -2,7 +2,8 @@
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
             [envman.files :as files]
-            [envman.util :as util]))
+            [envman.util :as util])
+ (:import [java.nio.file FileAlreadyExistsException]))
 
 (def opts-spec
   [[:name {:coerce util/parse-names}]
@@ -15,9 +16,13 @@
            :alias :F}]])
 
 (defn export [{{names :name :keys [file force]} :opts}]
-  (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
+  (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})
+        file' (or file ".env")]
     (doseq [name names
             :let [path (files/existing-envman-path name)
                   content (str/split-lines (slurp path))]]
       (fs/write-lines tmp content {:append true}))
-    (fs/move tmp (or file ".env") {:replace-existing force})))
+    (try
+      (fs/move tmp file' {:replace-existing force})
+      (catch FileAlreadyExistsException e
+        (throw (ex-info (str "file \"" file' "\" already exists") {} e))))))
