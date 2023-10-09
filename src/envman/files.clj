@@ -1,18 +1,20 @@
 (ns envman.files
-  (:require [babashka.fs :as fs]
-            [clojure.string :as str]))
+  (:require [babashka.fs :as fs]))
 
-(defn envman-dir []
+(defn envman-home []
   (fs/path (fs/home) ".envman-bb"))
 
-(defn envman-path [& paths]
-  (apply fs/path (envman-dir) "envs" paths))
+(defn envman-files-dir [& paths]
+  (apply fs/path (envman-home) "envs" paths))
 
-(defn existing-envman-path [& paths]
-  (let [fpath (apply envman-path paths)]
+(defn name-path [name]
+  (fs/path (envman-home) "envs" name))
+
+(defn existing-name-path [name]
+  (let [fpath (name-path name)]
     (when-not (fs/exists? fpath)
-      (throw (ex-info (str "no such name exists: " (str/join \/ paths)) {})))
+      (throw (ex-info (str "no such name exists: " name) {})))
     fpath))
 
-(defn ensure-envman-dirs []
-  (fs/create-dirs (envman-path)))
+(defn ensure-files-dir []
+  (fs/create-dirs (envman-files-dir)))

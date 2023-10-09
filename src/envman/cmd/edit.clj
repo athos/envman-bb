@@ -8,8 +8,8 @@
   [[:name {:coerce util/check-name}]])
 
 (defn edit [{:keys [opts]}]
-  (files/ensure-envman-dirs)
-  (let [fpath (files/existing-envman-path (:name opts))
+  (files/ensure-files-dir)
+  (let [fpath (files/existing-name-path (:name opts))
         time-created (fs/creation-time fpath)]
     (edit/edit :init-content (slurp (fs/file fpath)) :to fpath :force true)
     (fs/set-creation-time fpath time-created)))

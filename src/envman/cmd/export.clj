@@ -19,7 +19,7 @@
   (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})
         file' (or file ".env")]
     (doseq [name names
-            :let [path (files/existing-envman-path name)
+            :let [path (files/existing-name-path name)
                   content (str/split-lines (slurp (fs/file path)))]]
       (fs/write-lines tmp content {:append true}))
     (try

@@ -65,7 +65,7 @@
 
 (defn run [{:keys [opts args]}]
   (let [names (str/split (first args) #",")
-        paths (map files/envman-path names)
+        paths (map files/name-path names)
         init-env (into {} (System/getenv))
         {:keys [env updated]} (update-env init-env paths (:env opts))
         env (cond->> (select-keys env updated)

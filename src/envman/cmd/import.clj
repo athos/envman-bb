@@ -21,10 +21,10 @@
             :alias :F}]])
 
 (defn import [{:keys [opts]}]
-  (files/ensure-envman-dirs)
+  (files/ensure-files-dir)
   (let [name (:name opts)
         file (:file opts)
-        fpath (files/envman-path name)]
+        fpath (files/name-path name)]
     (if (and (not (:force opts)) (fs/exists? fpath))
       (throw (util/name-existing-error name))
       (try

@@ -7,6 +7,6 @@
   [[:name {:coerce util/check-name}]])
 
 (defn create [{:keys [opts]}]
-  (files/ensure-envman-dirs)
-  (let [fpath (files/envman-path (:name opts))]
+  (files/ensure-files-dir)
+  (let [fpath (files/name-path (:name opts))]
     (edit/edit :to fpath)))
