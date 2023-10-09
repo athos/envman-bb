@@ -17,15 +17,19 @@
            :coerce :boolean
            :alias :E}]
    [:force {:desc "Overwrite the existing name without error if it exists"
-            :coerce :boolean}]])
+            :coerce :boolean
+            :alias :F}]])
 
 (defn import [{:keys [opts]}]
   (files/ensure-envman-dirs)
   (let [name (:name opts)
+        file (:file opts)
         fpath (files/envman-path name)]
-    (try
-      (fs/copy (:file opts) fpath {:replace-existing (:force opts)})
-      (when (:edit opts)
-        (edit/edit {:to fpath}))
-      (catch FileAlreadyExistsException e
-        (throw (util/name-existing-error name e))))))
+    (if (and (not (:force opts)) (fs/exists? fpath))
+      (throw (util/name-existing-error name))
+      (try
+        (if (:edit opts)
+          (edit/edit {:init-content (slurp file) :to fpath :force (:force opts)})
+          (fs/copy file fpath {:replace-existing (:force opts)}))
+        (catch FileAlreadyExistsException e
+          (throw (util/name-existing-error name e)))))))
