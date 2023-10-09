@@ -22,4 +22,4 @@
     (fs/create-dirs p {:posix-file-permissions "rwx------"})))
 
 (defn ensure-files-dir []
-  (fs/create-dirs (envman-files-dir)))
+  (fs/create-dirs (envman-files-dir) {:posix-file-permissions "rwx------"}))
