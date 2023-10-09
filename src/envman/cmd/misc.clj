@@ -16,7 +16,7 @@
 
 (defn cat [{{names :name} :opts}]
   (doseq [name names]
-    (print (slurp (files/existing-envman-path name)))
+    (print (slurp (fs/file (files/existing-envman-path name))))
     (flush)))
 
 (def copy-opts-spec
@@ -30,7 +30,7 @@
   (let [tmp (fs/create-temp-file {:posix-file-permissions "rw-------"})]
     (doseq [name (:src opts)
             :let [path (files/existing-envman-path name)
-                  content (str/split-lines (slurp path))]]
+                  content (str/split-lines (slurp (fs/file path)))]]
       (fs/write-lines tmp content {:append true}))
     (try
       (fs/move tmp (files/envman-path (:dst opts))

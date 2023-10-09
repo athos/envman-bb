@@ -11,5 +11,5 @@
   (files/ensure-envman-dirs)
   (let [fpath (files/existing-envman-path (:name opts))
         time-created (fs/creation-time fpath)]
-    (edit/edit :init-content (slurp fpath) :to fpath :force true)
+    (edit/edit :init-content (slurp (fs/file fpath)) :to fpath :force true)
     (fs/set-creation-time fpath time-created)))

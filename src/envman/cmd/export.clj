@@ -20,7 +20,7 @@
         file' (or file ".env")]
     (doseq [name names
             :let [path (files/existing-envman-path name)
-                  content (str/split-lines (slurp path))]]
+                  content (str/split-lines (slurp (fs/file path)))]]
       (fs/write-lines tmp content {:append true}))
     (try
       (fs/move tmp file' {:replace-existing force})

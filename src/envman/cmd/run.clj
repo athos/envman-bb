@@ -22,7 +22,7 @@
   (apply proc/shell {:out *out* :err *err* :env env :continue true} cmd))
 
 (defn- load-dotenv [env in]
-  (dotenv/parse (slurp in) {:vars env}))
+  (dotenv/parse (slurp (fs/file in)) {:vars env}))
 
 (defn- update-env [init-env paths vars]
   (as-> {:env init-env :updated []} acc
