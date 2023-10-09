@@ -2,8 +2,8 @@
   (:require [clojure.string :as str]))
 
 (defn check-name [s]
-  (when (and (re-matches #"(?:[-a-zA-Z0-9_.]+/)*[-a-zA-Z0-9_.]" s)
-             (not (re-matches #"\.+" s)))
+  (when (or (not (re-matches #"(?:[-a-zA-Z0-9_.]+/)*[-a-zA-Z0-9_.]+" s))
+            (re-matches #"\.+" s))
     (throw
      (ex-info (str "name must consist of one or more characters [-a-zA-Z0-9_./], "
                    "but got \"" s "\"")
