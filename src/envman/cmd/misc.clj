@@ -6,12 +6,15 @@
             [envman.util :as util])
   (:import [java.nio.file FileAlreadyExistsException]))
 
-(defn list [_]
-  (let [root (files/envman-files-dir)]
-    (doseq [file (sort (fs/glob root "**"))
-            :when (not (fs/directory? file))
-            :let [rel-path (str (fs/relativize root file))]]
-      (println (str/replace rel-path fs/file-separator "/")))))
+(def list-opts-spec
+  [[:pattern {:coerce :string
+              :default "**"}]])
+
+(defn list [{:keys [opts]}]
+  (doseq [file (files/matching-paths (:pattern opts))
+          :when (not (fs/directory? file))
+          :let [rel-path (str (fs/relativize (files/envman-files-dir) file))]]
+    (println (str/replace rel-path fs/file-separator "/"))))
 
 (def cat-opts-spec
   [[:name {:coerce util/parse-names}]])

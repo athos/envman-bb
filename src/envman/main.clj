@@ -50,8 +50,8 @@
       {:cmds ["run"] :fn run/run :spec run/opts-spec
        :usage "run NAME[,NAME...] [OPTION...] -- COMMAND [ARG...]"
        :desc "Run command with specified sets of environment variables"}
-      {:cmds ["ls"] :fn misc/list
-       :usage "ls"
+      {:cmds ["ls"] :fn misc/list :spec misc/list-opts-spec :args->opts [:pattern]
+       :usage "ls [PATTERN]"
        :desc "List environment variable sets"}
       {:cmds ["cat"] :fn misc/cat :spec misc/cat-opts-spec :args->opts [:name]
        :usage "cat NAME[,NAME...]"

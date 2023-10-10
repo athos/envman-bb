@@ -17,6 +17,9 @@
       (throw (ex-info (str "no such name exists: " name) {})))
     fpath))
 
+(defn matching-paths [pattern]
+  (sort (fs/glob (envman-files-dir) pattern)))
+
 (defn ensure-parent-dirs [path]
   (when-let [p (fs/parent path)]
     (fs/create-dirs p {:posix-file-permissions "rwx------"})))
