@@ -19,7 +19,7 @@
            :alias :E}]])
 
 (defn- run-with-shell [env cmd]
-  (apply proc/shell {:out *out* :err *err* :env env :continue true} cmd))
+  (apply proc/shell {:inherit true :env env :continue true} cmd))
 
 (defn- load-dotenv [env in]
   (dotenv/parse (slurp (fs/file in)) {:vars env}))
