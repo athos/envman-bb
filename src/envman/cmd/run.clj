@@ -4,10 +4,12 @@
             [clojure.string :as str]
             [envman.dotenv :as dotenv]
             [envman.edit :as edit]
-            [envman.files :as files]))
+            [envman.files :as files]
+            [envman.util :as util]))
 
 (def opts-spec
-  [[:env {:desc "Set variable <name> to <value>"
+  [[:name {:coerce util/parse-names}]
+   [:env {:desc "Set variable <name> to <value>"
           :default-desc "<name>=<value>"
           :coerce [:string]
           :alias :e}]
@@ -64,8 +66,7 @@
     env'))
 
 (defn run [{:keys [opts args]}]
-  (let [names (str/split (first args) #",")
-        paths (map files/name-path names)
+  (let [paths (map files/name-path (:name opts))
         init-env (into {} (System/getenv))
         {:keys [env updated]} (update-env init-env paths (:env opts))
         env (cond->> (select-keys env updated)
@@ -74,6 +75,6 @@
 
               (not (:isolated opts))
               (merge init-env))
-        {:keys [exit]} @(run-with-shell env (rest args))]
+        {:keys [exit]} @(run-with-shell env args)]
     (when (not= exit 0)
       (System/exit exit))))

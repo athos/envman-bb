@@ -47,7 +47,7 @@
      [{:cmds ["create"] :fn create/create :spec create/opts-spec :args->opts [:name]
        :usage "create NAME"
        :desc "Create new environment variable set"}
-      {:cmds ["run"] :fn run/run :spec run/opts-spec
+      {:cmds ["run"] :fn run/run :spec run/opts-spec :args->opts [:name]
        :usage "run NAME[,NAME...] [OPTION...] -- COMMAND [ARG...]"
        :desc "Run command with specified sets of environment variables"}
       {:cmds ["ls"] :fn misc/list :spec misc/list-opts-spec :args->opts [:pattern]
