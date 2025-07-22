@@ -4,6 +4,7 @@
             [clojure.string :as str]
             [envman.dotenv :as dotenv]
             [envman.edit :as edit]
+            [envman.envset :as envset]
             [envman.files :as files]
             [envman.util :as util]))
 
@@ -24,7 +25,7 @@
   (apply proc/shell {:inherit true :env env :continue true} cmd))
 
 (defn- load-dotenv [env in]
-  (dotenv/parse (slurp (fs/file in)) {:vars env}))
+  (:body (envset/parse (slurp (fs/file in)) {:vars env})))
 
 (defn- update-env [init-env paths vars]
   (as-> {:env init-env :updated []} acc
