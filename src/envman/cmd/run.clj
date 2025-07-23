@@ -21,11 +21,22 @@
            :coerce :boolean
            :alias :E}]])
 
-(defn- run-with-shell [env cmd]
-  (apply proc/shell {:inherit true :env env :continue true} cmd))
-
 (defn- load-dotenv [env in]
-  (:body (envset/parse (slurp (fs/file in)) {:vars env})))
+  (let [{:keys [meta body]} (envset/parse (slurp (fs/file in)) {:vars env})]
+    (if-let [script (:setup meta)]
+      (let [script-path (fs/create-temp-file {:suffix ".sh" :posix-file-permissions "rw-------"})
+            script-file (fs/file script-path)
+            env-file (fs/create-temp-file {:suffix ".env" :posix-file-permission "rw-------"})
+            env' (assoc env "ENVMAN_ENV" (str env-file))]
+        (spit script-file script)
+        (try
+          @(proc/shell {:env env', :in script-file, :out "/dev/null", :err :inherit}
+                       "/bin/bash -s")
+          (into (or (dotenv/parse (slurp (fs/file env-file)) {:vars env}) []) body)
+          (finally
+            (fs/delete-if-exists env-file)
+            (fs/delete-if-exists script-path))))
+      body)))
 
 (defn- update-env [init-env paths vars]
   (as-> {:env init-env :updated []} acc
@@ -65,6 +76,9 @@
         env' (into {} (load-dotenv env tmp))]
     (fs/delete tmp)
     env'))
+
+(defn- run-with-shell [env cmd]
+  (apply proc/shell {:inherit true :env env :continue true} cmd))
 
 (defn run [{:keys [opts args]}]
   (let [paths (map files/name-path (:name opts))
