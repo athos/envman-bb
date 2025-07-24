@@ -27,12 +27,23 @@
       (let [script-path (fs/create-temp-file {:suffix ".sh" :posix-file-permissions "rw-------"})
             script-file (fs/file script-path)
             env-file (fs/create-temp-file {:suffix ".env" :posix-file-permission "rw-------"})
-            env' (assoc env "ENVMAN_ENV" (str env-file))]
+            env' (assoc env "ENVMAN_ENV" (str env-file))
+            boundary (str "---" (random-uuid) "---")]
         (spit script-file script)
+        (spit script-file (str "echo\necho \"" boundary "\"\n") :append true)
+        (spit script-file "set\n" :append true)
         (try
-          @(proc/shell {:env env', :in script-file, :out "/dev/null", :err :inherit}
-                       "/bin/bash -s")
-          (into (or (dotenv/parse (slurp (fs/file env-file)) {:vars env}) []) body)
+          (let [{:keys [out]} @(proc/shell {:env env', :in script-file,
+                                            :out :string, :err :inherit}
+                                           "/bin/bash -s")
+                _vars (->> (str/split-lines out)
+                           (drop-while (partial not= boundary))
+                           rest
+                           (into {}
+                                 (map (fn [line]
+                                        (let [[_ k v] (re-matches #"([^=]+)=(.*)" line)]
+                                          [k v])))))]
+            (into (or (dotenv/parse (slurp (fs/file env-file)) {:vars env}) []) body))
           (finally
             (fs/delete-if-exists env-file)
             (fs/delete-if-exists script-path))))
