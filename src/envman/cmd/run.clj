@@ -22,7 +22,7 @@
            :alias :E}]])
 
 (defn- load-dotenv [env in]
-  (let [{:keys [meta body]} (envset/parse (slurp (fs/file in)) {:vars env})]
+  (let [{:keys [meta body]} (envset/parse (slurp (fs/file in)))]
     (if-let [script (:setup meta)]
       (let [script-path (fs/create-temp-file {:suffix ".sh" :posix-file-permissions "rw-------"})
             script-file (fs/file script-path)
@@ -36,18 +36,22 @@
           (let [{:keys [out]} @(proc/shell {:env env', :in script-file,
                                             :out :string, :err :inherit}
                                            "/bin/bash -s")
-                _vars (->> (str/split-lines out)
-                           (drop-while (partial not= boundary))
-                           rest
-                           (into {}
-                                 (map (fn [line]
-                                        (let [[_ k v] (re-matches #"([^=]+)=(.*)" line)]
-                                          [k v])))))]
-            (into (or (dotenv/parse (slurp (fs/file env-file)) {:vars env}) []) body))
+                shell-vars (->> (str/split-lines out)
+                                (drop-while (partial not= boundary))
+                                rest
+                                (into {}
+                                      (map (fn [line]
+                                             (let [[_ k v] (re-matches #"([^=]+)=(.*)" line)]
+                                               [k v])))))
+                out-vars (dotenv/parse (slurp (fs/file env-file)))
+                env' (-> env (into shell-vars) (into out-vars))]
+            (-> shell-vars
+                (into out-vars)
+                (into (dotenv/expand-vars env' body))))
           (finally
             (fs/delete-if-exists env-file)
             (fs/delete-if-exists script-path))))
-      body)))
+      (dotenv/expand-vars env body))))
 
 (defn- update-env [init-env paths vars]
   (as-> {:env init-env :updated []} acc
