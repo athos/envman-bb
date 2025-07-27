@@ -2,19 +2,25 @@
   (:refer-clojure :exclude [cat list remove])
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
+            [envman.envset :as envset]
             [envman.files :as files]
             [envman.util :as util])
   (:import [java.nio.file FileAlreadyExistsException]))
 
 (def list-opts-spec
   [[:pattern {:coerce :string
-              :default "**"}]])
+              :default "**"}]
+   [:all {:desc "Show envsets including hidden ones"
+          :coerce :boolean
+          :alias :a}]])
 
 (defn list [{:keys [opts]}]
   (doseq [pat (str/split (:pattern opts) #",")
           file (files/matching-paths pat)
           :when (not (fs/directory? file))
-          :let [rel-path (str (fs/relativize (files/envman-files-dir) file))]]
+          :let [rel-path (str (fs/relativize (files/envman-files-dir) file))
+                {:keys [meta]} (envset/parse (slurp (fs/file file)))]
+          :when (or (:all opts) (not (:hidden meta)))]
     (println (str/replace rel-path fs/file-separator "/"))))
 
 (def cat-opts-spec
