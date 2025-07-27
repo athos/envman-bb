@@ -11,7 +11,8 @@
               :default "**"}]])
 
 (defn list [{:keys [opts]}]
-  (doseq [file (files/matching-paths (:pattern opts))
+  (doseq [pat (str/split (:pattern opts) #",")
+          file (files/matching-paths pat)
           :when (not (fs/directory? file))
           :let [rel-path (str (fs/relativize (files/envman-files-dir) file))]]
     (println (str/replace rel-path fs/file-separator "/"))))
