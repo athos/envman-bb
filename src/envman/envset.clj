@@ -4,7 +4,7 @@
 
 (defn- parse-meta [s]
   (if-let [[_ more] (re-matches #"(?sm)^---\n(.*)" s)]
-    (if-let [[_ pre post] (re-matches #"(?sm)(.*?)^---\n?(.*)" more)]
+    (if-let [[_ pre post] (re-matches #"(?sm)(.*?)^---$(.*)" more)]
       [(yaml/parse-string pre) post]
       (throw (ex-info "a line that only contains `---` expected, but not found" {})))
     [nil s]))
