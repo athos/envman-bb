@@ -12,16 +12,40 @@
               :default "**"}]
    [:all {:desc "Show envsets including hidden ones"
           :coerce :boolean
-          :alias :a}]])
+          :alias :a}]
+   [:long {:desc "Show detailed information of each envset"
+           :coerce :boolean
+           :alias :l}]])
+
+(defn- pad-right [n s]
+  (apply str s (repeat (- n (count s)) \space)))
+
+(defn- print-envset-details [es]
+  (let [max-name (apply max (map (comp count :name) es))
+        max-tags (->> es
+                      (map (fn [{{:keys [tags]} :meta}]
+                             (apply + (dec (count tags)) (map count tags))))
+                      (apply max))]
+    (run! (fn [{:keys [name meta]}]
+            (printf "%s    %s    %s\n"
+                    (pad-right max-name name)
+                    (pad-right max-tags (str/join \, (:tags meta)))
+                    (or (get meta :description) "")))
+          es)))
 
 (defn list [{:keys [opts]}]
-  (doseq [pat (str/split (:pattern opts) #",")
-          file (files/matching-paths pat)
-          :when (not (fs/directory? file))
-          :let [rel-path (str (fs/relativize (files/envman-files-dir) file))
-                {:keys [meta]} (envset/parse (slurp (fs/file file)))]
-          :when (or (:all opts) (not (:hidden meta)))]
-    (println (str/replace rel-path fs/file-separator "/"))))
+  (let [es (for [pat (str/split (:pattern opts) #",")
+                 file (files/matching-paths pat)
+                 :when (not (fs/directory? file))
+                 :let [rel-path (str (fs/relativize (files/envman-files-dir) file))
+                       name (str/replace rel-path fs/file-separator "/")
+                       {:keys [meta]} (envset/parse (slurp (fs/file file)))]
+                 :when (or (:all opts) (not (:hidden meta)))]
+             {:name name :meta meta})]
+    (when (seq es)
+      (if (:long opts)
+        (print-envset-details es)
+        (run! (comp println :name) es)))))
 
 (def cat-opts-spec
   [[:name {:coerce util/parse-names}]])
