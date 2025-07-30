@@ -5,7 +5,8 @@
             [envman.cmd.export :as export]
             [envman.cmd.import :as import]
             [envman.cmd.misc :as misc]
-            [envman.cmd.run :as run]))
+            [envman.cmd.run :as run]
+            [envman.cmd.vcs :as vcs]))
 
 (declare usage)
 
@@ -74,6 +75,9 @@
       {:cmds ["export"] :fn export/export :spec export/opts-spec :args->opts [:name]
        :usage "export NAME[,NAME...]"
        :desc "Export environment variable sets as .env file"}
+      {:cmds ["vcs"] :fn vcs/vcs
+       :usage "vcs vcs-command-args..."
+       :desc "Execute VCS command specified by vcs-command-args"}
       {:cmds ["help"] :fn usage
        :desc "Print this message"}
       {:cmds [] :fn fallback}]
