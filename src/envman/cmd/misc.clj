@@ -4,6 +4,7 @@
             [clojure.string :as str]
             [envman.envset :as envset]
             [envman.files :as files]
+            [envman.query :as query]
             [envman.util :as util])
   (:import [java.nio.file FileAlreadyExistsException]))
 
@@ -15,7 +16,10 @@
           :alias :a}]
    [:long {:desc "Show detailed information of each envset"
            :coerce :boolean
-           :alias :l}]])
+           :alias :l}]
+   [:query {:desc ""
+            :coerce :edn
+            :alias :q}]])
 
 (defn- pad-right [n s]
   (apply str s (repeat (- n (count s)) \space)))
@@ -34,13 +38,17 @@
           es)))
 
 (defn list [{:keys [opts]}]
-  (let [es (for [pat (str/split (:pattern opts) #",")
+  (let [pred (or (when-let [query (:query opts)]
+                   (query/compile-query query))
+                 (constantly true))
+        es (for [pat (str/split (:pattern opts) #",")
                  file (files/matching-paths pat)
                  :when (not (fs/directory? file))
                  :let [rel-path (str (fs/relativize (files/envman-files-dir) file))
                        name (str/replace rel-path fs/file-separator "/")
                        {:keys [meta]} (envset/parse (slurp (fs/file file)))]
-                 :when (or (:all opts) (not (:hidden meta)))]
+                 :when (and (or (:all opts) (not (:hidden meta)))
+                            (pred meta))]
              {:name name :meta meta})]
     (when (seq es)
       (if (:long opts)
