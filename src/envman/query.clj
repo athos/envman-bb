@@ -22,7 +22,7 @@
         (and (keyword? expr)
              (nil? (namespace expr))
              (str/starts-with? (name expr) "attrs."))
-        (let [attr (str/replace (name expr) #"^attrs\." "")]
+        (let [attr (keyword (str/replace (name expr) #"^attrs\." ""))]
           `(get (:attrs ~'m) ~attr))
 
         (and (seq? expr) (seq expr))
