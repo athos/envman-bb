@@ -8,7 +8,7 @@
             [envman.files :as files]
             [envman.util :as util]))
 
-(def opts-spec
+(def run-opts-spec
   [[:name {:coerce util/parse-names}]
    [:env {:desc "Set variable <name> to <value>"
           :default-desc "<name>=<value>"
@@ -21,7 +21,13 @@
            :coerce :boolean
            :alias :E}]])
 
-(defn- load-envset [env {:keys [meta body]}]
+(def show-opts-spec
+  [[:name {:coerce util/parse-names}]
+   [:no-masking {:desc "Disable masking of dynamically loaded values"
+                 :coerce :boolean
+                 :alias :n}]])
+
+(defn- load-envset [env {:keys [meta body]} {:keys [no-masking]}]
   (if-let [script (:setup meta)]
     (let [script-path (fs/create-temp-file {:suffix ".sh" :posix-file-permissions "rw-------"})
           script-file (fs/file script-path)
@@ -35,14 +41,18 @@
         (let [{:keys [out]} @(proc/shell {:env env', :in script-file,
                                           :out :string, :err :inherit}
                                          "/bin/bash -s")
+              mask-vals (if no-masking
+                          identity
+                          (map (fn [[k v]] [k (str/join (repeat (count v) \*))])))
               shell-vars (->> (str/split-lines out)
                               (drop-while (partial not= boundary))
                               rest
                               (into {}
-                                    (map (fn [line]
-                                           (let [[_ k v] (re-matches #"([^=]+)=(.*)" line)]
-                                             [k v])))))
-              out-vars (dotenv/load (slurp (fs/file env-file)))
+                                    (comp (map (fn [line]
+                                                 (let [[_ k v] (re-matches #"([^=]+)=(.*)" line)]
+                                                   [k v])))
+                                          mask-vals)))
+              out-vars (into [] mask-vals (dotenv/load (slurp (fs/file env-file))))
               env' (-> env (into shell-vars) (into out-vars))]
           (into out-vars (dotenv/expand-vars env' body)))
         (finally
@@ -68,13 +78,13 @@
           (recur more (conj seen path) (conj ret e)))
         ret))))
 
-(defn- update-env [init-env paths vars]
+(defn- update-env [init-env paths opts]
   (let [parsed-envsets (->> paths
                             (map #(parse-file (files/name-path %)))
                             (resolve-deps paths))]
     (as-> {:env init-env :updated []} acc
       (reduce (fn [acc parsed-envset]
-                (let [vars (load-envset (:env acc) parsed-envset)]
+                (let [vars (load-envset (:env acc) parsed-envset opts)]
                   (-> acc
                       (update :env into vars)
                       (update :updated into (map first vars)))))
@@ -86,7 +96,7 @@
                       (assoc-in [:env k] v)
                       (update :updated conj k))))
               acc
-              vars))))
+              (:env opts)))))
 
 (defn- quote-content [s]
   (str \"
@@ -102,11 +112,11 @@
     (printf "%s=%s\n" k v'))
   (flush))
 
-(defn- edit-and-load [edit-vars env]
+(defn- edit-and-load [edit-vars env opts]
   (let [content (with-out-str
                   (print-env edit-vars env))
         tmp (edit/edit :init-content content)
-        env' (into {} (load-envset env (dotenv/parse tmp)))]
+        env' (into {} (load-envset env (dotenv/parse tmp) (assoc opts :no-masking true)))]
     (fs/delete tmp)
     env'))
 
@@ -115,13 +125,19 @@
 
 (defn run [{:keys [opts args]}]
   (let [init-env (into {} (System/getenv))
-        {:keys [env updated]} (update-env init-env (:name opts) (:env opts))
+        {:keys [env updated]} (update-env init-env (:name opts) (assoc opts :no-masking true))
         env (cond->> (select-keys env updated)
               (:edit opts)
-              (edit-and-load updated)
+              (edit-and-load updated opts)
 
               (not (:isolated opts))
               (merge init-env))
         {:keys [exit]} @(run-with-shell env args)]
     (when (not= exit 0)
       (System/exit exit))))
+
+(defn show [{:keys [opts]}]
+  (let [init-env (into {} (System/getenv))
+        {:keys [env updated]} (update-env init-env (:name opts) opts)
+        vars (reverse (distinct (reverse updated)))]
+    (print-env vars env)))

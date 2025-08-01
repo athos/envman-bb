@@ -48,7 +48,7 @@
      [{:cmds ["create"] :fn create/create :spec create/opts-spec :args->opts [:name]
        :usage "create NAME"
        :desc "Create new environment variable set"}
-      {:cmds ["run"] :fn run/run :spec run/opts-spec :args->opts [:name]
+      {:cmds ["run"] :fn run/run :spec run/run-opts-spec :args->opts [:name]
        :usage "run NAME[,NAME...] [OPTION...] -- COMMAND [ARG...]"
        :desc "Run command with specified sets of environment variables"}
       {:cmds ["ls"] :fn misc/list :spec misc/list-opts-spec :args->opts [:pattern]
@@ -56,7 +56,10 @@
        :desc "List environment variable sets"}
       {:cmds ["cat"] :fn misc/cat :spec misc/cat-opts-spec :args->opts [:name]
        :usage "cat NAME[,NAME...]"
-       :desc "Show environment variable sets"}
+       :desc "Show raw envset file contents)"}
+      {:cmds ["show"] :fn run/show :spec run/show-opts-spec :args->opts [:name]
+       :usage "show NAME[,NAME...]"
+       :desc "Show computed environment variables"}
       {:cmds ["edit"] :fn edit/edit :spec edit/opts-spec :args->opts [:name]
        :usage "edit NAME"
        :desc "Edit environment variable set"}
